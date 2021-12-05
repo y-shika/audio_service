@@ -915,8 +915,8 @@ class AudioService {
   }
 
   static Future<void> _observeMediaItem() async {
-    await for (var mediaItem in _handler.mediaItem) {
-      if (mediaItem == null) continue;
+    _handler.mediaItem.listen((mediaItem) async {
+      if (mediaItem == null) return;
       final artUri = mediaItem.artUri;
       if (artUri != null) {
         // We potentially need to fetch the art.
@@ -935,7 +935,7 @@ class AudioService {
             // Load the art
             filePath = await _loadArtwork(mediaItem);
             // If we failed to download the art, abort.
-            if (filePath == null) continue;
+            if (filePath == null) return;
             // If we've already set a new media item, cancel this request.
             // XXX: Test this
             //if (mediaItem != _handler.mediaItem.value) continue;
@@ -952,7 +952,7 @@ class AudioService {
         await _platform.setMediaItem(
             SetMediaItemRequest(mediaItem: mediaItem._toMessage()));
       }
-    }
+    });
   }
 
   static Future<void> _observeAndroidPlaybackInfo() async {
