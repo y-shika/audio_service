@@ -916,6 +916,8 @@ class AudioService {
 
   static Future<void> _observeMediaItem() async {
     _handler.mediaItem.listen((mediaItem) async {
+      // ignore: avoid_print
+      print('listen setting mediaItem: $mediaItem');
       if (mediaItem == null) return;
       final artUri = mediaItem.artUri;
       if (artUri != null) {
