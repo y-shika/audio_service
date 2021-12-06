@@ -855,7 +855,7 @@ class AudioService {
   static BaseCacheManager? _cacheManager;
 
   static late AudioServiceConfig _config;
-  static late AudioHandler _handler;
+  static late AudioHandler myHandler;
 
   /// The current configuration.
   static AudioServiceConfig get config => _config;
@@ -903,7 +903,7 @@ class AudioService {
     await _platform.configure(ConfigureRequest(config: config._toMessage()));
     _config = config;
     final handler = builder();
-    _handler = handler;
+    myHandler = handler;
 
     _platform.setHandlerCallbacks(_HandlerCallbacks(handler));
     _observeMediaItem();
@@ -915,7 +915,7 @@ class AudioService {
   }
 
   static Future<void> _observeMediaItem() async {
-    _handler.mediaItem.listen((mediaItem) async {
+    myHandler.mediaItem.listen((mediaItem) async {
       // ignore: avoid_print
       print('listen setting mediaItem: $mediaItem');
       if (mediaItem == null) return;
@@ -958,7 +958,7 @@ class AudioService {
   }
 
   static Future<void> _observeAndroidPlaybackInfo() async {
-    await for (var playbackInfo in _handler.androidPlaybackInfo) {
+    await for (var playbackInfo in myHandler.androidPlaybackInfo) {
       await _platform.setAndroidPlaybackInfo(SetAndroidPlaybackInfoRequest(
         playbackInfo: playbackInfo._toMessage(),
       ));
@@ -966,7 +966,7 @@ class AudioService {
   }
 
   static Future<void> _observeQueue() async {
-    await for (var queue in _handler.queue) {
+    await for (var queue in myHandler.queue) {
       if (_config.preloadArtwork) {
         _loadAllArtwork(queue);
       }
@@ -976,8 +976,8 @@ class AudioService {
   }
 
   static Future<void> _observePlaybackState() async {
-    var previousState = _handler.playbackState.nvalue;
-    await for (var playbackState in _handler.playbackState) {
+    var previousState = myHandler.playbackState.nvalue;
+    await for (var playbackState in myHandler.playbackState) {
       await _platform
           .setState(SetStateRequest(state: playbackState._toMessage()));
       if (playbackState.processingState == AudioProcessingState.idle &&
@@ -1023,7 +1023,8 @@ class AudioService {
     late StreamSubscription<MediaItem?> mediaItemSubscription;
     late StreamSubscription<PlaybackState> playbackStateSubscription;
     Timer? currentTimer;
-    Duration duration() => _handler.mediaItem.nvalue?.duration ?? Duration.zero;
+    Duration duration() =>
+        myHandler.mediaItem.nvalue?.duration ?? Duration.zero;
     Duration step() {
       var s = duration() ~/ steps;
       if (s < minPeriod) s = minPeriod;
@@ -1032,8 +1033,8 @@ class AudioService {
     }
 
     void yieldPosition(Timer? timer) {
-      if (last != _handler.playbackState.nvalue?.position) {
-        controller.add((last = _handler.playbackState.nvalue?.position)!);
+      if (last != myHandler.playbackState.nvalue?.position) {
+        controller.add((last = myHandler.playbackState.nvalue?.position)!);
       }
     }
 
@@ -1041,13 +1042,13 @@ class AudioService {
       sync: true,
       onListen: () {
         mediaItemSubscription =
-            _handler.mediaItem.listen((MediaItem? mediaItem) {
+            myHandler.mediaItem.listen((MediaItem? mediaItem) {
           // Potentially a new duration
           currentTimer?.cancel();
           currentTimer = Timer.periodic(step(), yieldPosition);
         });
         playbackStateSubscription =
-            _handler.playbackState.listen((PlaybackState state) {
+            myHandler.playbackState.listen((PlaybackState state) {
           // Potentially a time discontinuity
           yieldPosition(currentTimer);
         });
@@ -1202,8 +1203,8 @@ class AudioService {
       // ignore: avoid_print
       print('NOTE: androidEnableQueue is always true from 0.18.0 onwards.');
     }
-    if (_cacheManager != null && _handler.playbackState.hasValue) {
-      if (_handler.playbackState.nvalue!.processingState !=
+    if (_cacheManager != null && myHandler.playbackState.hasValue) {
+      if (myHandler.playbackState.nvalue!.processingState !=
           AudioProcessingState.idle) {
         return false;
       }
@@ -3587,7 +3588,7 @@ class LocalAndroidPlaybackInfo extends AndroidPlaybackInfo {
 @Deprecated("Use stream subjects in BaseAudioHandler instead.")
 class AudioServiceBackground {
   static SwitchAudioHandler get _handler =>
-      AudioService._handler as SwitchAudioHandler;
+      AudioService.myHandler as SwitchAudioHandler;
   static Completer<BackgroundAudioTask>? _startCompleter;
 
   /// Deprecated. Use [AudioHandler.playbackState] instead.
